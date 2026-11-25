@@ -107,7 +107,7 @@ function scans(v){let k='';v.innerHTML=`<h1>Scans and photos</h1><p class="lead"
 let selId=null;
 function openSheet(id){selId=id;const p=P[id],m=matchFor(id),r=rel(id);const s=$('#sheet');
  s.innerHTML=`<div class="grab"></div><button class="btn sm x" id="sx">Close</button><span class="kick" style="--c:${col(id)}">${esc(p.b==='root'?'Our family':p.b==='W'?'Siegel family':p.b)}</span><h2>${esc(p.n)}</h2><div class="yrs">${yrs(id)}${place(id)?' · born in '+esc(place(id)):''}</div>${r?`<div class="rel" style="--c:${col(id)}">${esc(r[0].toUpperCase()+r.slice(1))}</div>`:''}
- <div class="row"><a class="btn pri" href="#/p/${id}">Open full page</a>${id!==focusId?'<button class="btn" id="ctr">Center tree here</button>':''}</div>
+ <div class="row"><a class="btn pri" href="#/p/${id}">Open full page</a>${id!==focusId?'<button class="btn" id="ctr">Show their family</button>':''}</div>
  ${m.st.length?`<h3>Stories</h3>${m.st.slice(0,4).map(storyCard).join('')}`:''}${m.ar.length?`<h3>Scans</h3><div class="grid">${m.ar.slice(0,4).map(thumb).join('')}</div>`:''}${p.q?`<div class="q">${esc(p.q)}</div>`:''}`;
  s.classList.add('open');$('#sx').onclick=closeSheet;const c=$('#ctr');if(c)c.onclick=()=>{closeSheet();location.hash='#/tree/'+id};bindThumbs(s);document.querySelectorAll('.tc.sel').forEach(x=>x.classList.remove('sel'));const el=document.querySelector(`.tc[data-id="${id}"]`);el&&el.classList.add('sel')}
 function closeSheet(){$('#sheet').classList.remove('open');selId=null;document.querySelectorAll('.tc.sel').forEach(x=>x.classList.remove('sel'))}
@@ -130,18 +130,26 @@ function layout(fid,md){const maxA=md==='desc'?0:md==='anc'?6:3,maxD=md==='anc'?
  nodes.push({id:fid,x:0,y:0});walk(A,-1,1);walk(Dn,1,1);
  P[fid].sp.forEach((s,i)=>{nodes.push({id:s,x:(i+1)*SX,y:0});edges.push([CW/2,0,(i+1)*SX-CW/2,0,2])});
  return{nodes,edges,fx:0}}
+function layoutAll(){const pos={},nodes=[],edges=[],KY=1.65,CG=64,X0=CW+CG;
+ T.lay.b.forEach(([id,d,b,k,t])=>{const x=d*X0,y=b*KY;pos[id]={x,y};nodes.push(k==='q'?{ghost:t,x,y,qid:id}:{id,x,y})});
+ T.lay.e.forEach(([ps,ks,dash])=>{const pp=ps.map(i=>pos[i]).filter(Boolean),kk=ks.map(i=>pos[i]).filter(Boolean);if(!pp.length||!kk.length)return;
+  const px=pp[0].x+CW/2,py=pp.reduce((a,p)=>a+p.y,0)/pp.length,bx=px+CG/2+4;
+  if(pp.length>1){const ys=pp.map(p=>p.y);edges.push({pts:[[px+8,Math.min(...ys)],[px+8,Math.max(...ys)]],k:dash});pp.forEach(p=>edges.push({pts:[[p.x+CW/2,p.y],[px+8,p.y]],k:dash}))}
+  edges.push({pts:[[px+8,py],[bx,py]],k:dash});const ys=kk.map(p=>p.y).concat([py]);edges.push({pts:[[bx,Math.min(...ys)],[bx,Math.max(...ys)]],k:dash});
+  kk.forEach(p=>edges.push({pts:[[bx,p.y],[p.x-CW/2,p.y]],k:dash}))});
+ return{nodes,edges,pos}}
 function tree(v,id){id=id||me||T.me;if(!P[id])id=T.me;focusId=id;v.classList.add('tree');
- v.innerHTML=`<div id="tv"><div id="tmodes">${[['both','Family'],['anc','Ancestors'],['desc','Descendants']].map(([k,l])=>`<button data-m="${k}" aria-pressed="${k===mode}">${l}</button>`).join('')}<button id="tfind">Find…</button></div><div id="world"></div><canvas id="mm" width="300" height="220"></canvas><div id="thint">Drag to move · pinch to zoom · tap a person</div><div id="tctl"><button id="zi" aria-label="Zoom in">+</button><button id="zo" aria-label="Zoom out">&minus;</button><button id="zf" aria-label="Show everything">&#x26F6;</button><button id="zc" aria-label="Center on ${esc(first(id))}">&#9678;</button></div></div>`;
- const tv=$('#tv'),w=$('#world');const{nodes,edges,fx}=layout(id,mode);NODES=nodes;
+ v.innerHTML=`<div id="tv"><div id="tmodes">${[['all','Whole tree'],['both','Family'],['anc','Ancestors'],['desc','Descendants']].map(([k,l])=>`<button data-m="${k}" aria-pressed="${k===mode}">${l}</button>`).join('')}<button id="tfind">Find…</button></div><div id="world"></div><canvas id="mm" width="300" height="220"></canvas><div id="thint">Pinch to zoom in · drag to move · tap a person</div><div id="tctl"><button id="zi" aria-label="Zoom in">+</button><button id="zo" aria-label="Zoom out">&minus;</button><button id="zf" aria-label="Show everything">&#x26F6;</button><button id="zc" aria-label="Center on ${esc(first(id))}">&#9678;</button></div></div>`;
+ const tv=$('#tv'),w=$('#world');const ALL=mode==='all';const L=ALL?layoutAll():layout(id,mode);const{nodes,edges}=L;NODES=nodes;
  let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;nodes.forEach(n=>{minx=Math.min(minx,n.x-CW/2);maxx=Math.max(maxx,n.x+CW/2);miny=Math.min(miny,n.y-CH/2);maxy=Math.max(maxy,n.y+CH/2)});BB={minx,maxx,miny,maxy};
  const pad=60;w.style.width=(maxx-minx+2*pad)+'px';w.style.height=(maxy-miny+2*pad)+'px';const ox=-minx+pad,oy=-miny+pad;
- const path=e=>{const[x1,y1,x2,y2,k]=e;const X1=x1+ox,Y1=y1+oy,X2=x2+ox,Y2=y2+oy;if(k===2)return`<path d="M${X1} ${Y1}H${X2}" stroke="#8a5f0c" stroke-width="3" fill="none"/>`;const my=(Y1+Y2)/2;return`<path d="M${X1} ${Y1}V${my}H${X2}V${Y2}" stroke="${k?'#b45309':'#8d8272'}" stroke-width="2.5" ${k?'stroke-dasharray="6 5"':''} fill="none"/>`};
+ const path=e=>{if(e.pts){return`<path d="M${e.pts.map(p=>(p[0]+ox)+' '+(p[1]+oy)).join('L')}" stroke="${e.k?'#b45309':'#8d8272'}" stroke-width="2.5" ${e.k?'stroke-dasharray="6 5"':''} fill="none"/>`}const[x1,y1,x2,y2,k]=e;const X1=x1+ox,Y1=y1+oy,X2=x2+ox,Y2=y2+oy;if(k===2)return`<path d="M${X1} ${Y1}H${X2}" stroke="#8a5f0c" stroke-width="3" fill="none"/>`;const my=(Y1+Y2)/2;return`<path d="M${X1} ${Y1}V${my}H${X2}V${Y2}" stroke="${k?'#b45309':'#8d8272'}" stroke-width="2.5" ${k?'stroke-dasharray="6 5"':''} fill="none"/>`};
  w.innerHTML=`<svg width="${maxx-minx+2*pad}" height="${maxy-miny+2*pad}">${edges.map(path).join('')}</svg>`+nodes.map(n=>{const left=n.x+ox-CW/2,top=n.y+oy-CH/2;if(n.ghost)return`<div class="tc ghost" style="left:${left}px;top:${top}px;--c:#b45309"><b>? ${esc(n.ghost)}</b></div>`;const m=matchFor(n.id),bd=m.ar.length+m.st.length;return`<button class="tc${n.id===id?' focus':''}" data-id="${n.id}" style="left:${left}px;top:${top}px;--c:${col(n.id)}"><b>${esc(P[n.id].n)}</b><small>${yrs(n.id)}</small>${bd?`<span class="bd">&#128247; ${bd}</span>`:''}</button>`}).join('');
- const vw=()=>tv.clientWidth,vh=()=>tv.clientHeight;const fpos={x:fx+ox,y:oy};
+ const vw=()=>tv.clientWidth,vh=()=>tv.clientHeight;const fnode=nodes.find(n=>n.id===id)||nodes[0];const fpos={x:fnode.x+ox,y:fnode.y+oy};
  const apply=()=>{w.style.transform=`translate(${TX}px,${TY}px) scale(${S})`;mm()};
- const center=(sc)=>{const near=nodes.filter(n=>Math.abs(n.y)<=SY);let a=1e9,b=-1e9,c=1e9,d=-1e9;near.forEach(n=>{a=Math.min(a,n.x-CW/2);b=Math.max(b,n.x+CW/2);c=Math.min(c,n.y-CH/2);d=Math.max(d,n.y+CH/2)});S=sc||Math.max(.62,Math.min(1,(vw()-20)/(b-a),(vh()-110)/(d-c)));TX=vw()/2-((a+b)/2+ox)*S;TY=(vh()+60)/2-((c+d)/2+oy)*S;apply()};
- const fit=()=>{const ww=maxx-minx+2*pad,hh=maxy-miny+2*pad;S=Math.min(vw()/ww,vh()/hh,1);TX=(vw()-ww*S)/2;TY=(vh()-hh*S)/2;apply()};
- const zoomAt=(f,cx,cy)=>{const ns=Math.max(.15,Math.min(2.2,S*f));TX=cx-(cx-TX)*ns/S;TY=cy-(cy-TY)*ns/S;S=ns;apply()};
+ const center=(sc)=>{if(ALL&&!sc){fit();return}if(ALL){S=sc;TX=vw()/2-fpos.x*S;TY=(vh()+60)/2-fpos.y*S;apply();return}const near=nodes.filter(n=>Math.abs(n.y)<=SY);let a=1e9,b=-1e9,c=1e9,d=-1e9;near.forEach(n=>{a=Math.min(a,n.x-CW/2);b=Math.max(b,n.x+CW/2);c=Math.min(c,n.y-CH/2);d=Math.max(d,n.y+CH/2)});S=sc||Math.max(.62,Math.min(1,(vw()-20)/(b-a),(vh()-110)/(d-c)));TX=vw()/2-((a+b)/2+ox)*S;TY=(vh()+60)/2-((c+d)/2+oy)*S;apply()};
+ const fit=()=>{const ww=maxx-minx+2*pad,hh=maxy-miny+2*pad;S=Math.min(vw()/ww,(vh()-60)/hh,1);TX=(vw()-ww*S)/2;TY=60+((vh()-60)-hh*S)/2;apply()};
+ const zoomAt=(f,cx,cy)=>{const ns=Math.max(.04,Math.min(2.2,S*f));TX=cx-(cx-TX)*ns/S;TY=cy-(cy-TY)*ns/S;S=ns;apply()};
  function mm(){const c=$('#mm');if(!c||!c.offsetParent)return;const g=c.getContext('2d'),W=c.width,H=c.height;g.clearRect(0,0,W,H);const ww=maxx-minx+2*pad,hh=maxy-miny+2*pad,k=Math.min((W-8)/ww,(H-8)/hh);g.fillStyle='#8d8272';nodes.forEach(n=>{g.fillStyle=n.id===id?'#C9962B':'#8d8272';g.fillRect(4+(n.x+ox-CW/2)*k,4+(n.y+oy-CH/2)*k,Math.max(3,CW*k),Math.max(2,CH*k))});g.strokeStyle='#1f5fbf';g.lineWidth=3;g.strokeRect(4+(-TX/S)*k,4+(-TY/S)*k,vw()/S*k,vh()/S*k);c._k=k}
  $('#mm').onpointerdown=e=>{const c=e.target,r=c.getBoundingClientRect(),k=c._k||1,px=(e.clientX-r.left)*c.width/r.width,py=(e.clientY-r.top)*c.height/r.height;TX=vw()/2-((px-4)/k)*S;TY=vh()/2-((py-4)/k)*S;apply()};
  const pts=new Map();let st=null,moved=0;
@@ -150,7 +158,7 @@ function tree(v,id){id=id||me||T.me;if(!P[id])id=T.me;focusId=id;v.classList.add
  const up=e=>{if(!pts.has(e.pointerId))return;pts.delete(e.pointerId);if(!pts.size){if(moved<=6){const el=document.elementFromPoint(e.clientX,e.clientY),c=el&&el.closest('.tc[data-id]');if(c)openSheet(c.dataset.id);else closeSheet()}st=null}else{st=null}};
  tv.onpointerup=up;tv.onpointercancel=up;
  tv.onwheel=e=>{e.preventDefault();const r=tv.getBoundingClientRect();zoomAt(e.deltaY<0?1.15:1/1.15,e.clientX-r.left,e.clientY-r.top)};
- $('#zi').onclick=()=>zoomAt(1.3,vw()/2,vh()/2);$('#zo').onclick=()=>zoomAt(1/1.3,vw()/2,vh()/2);$('#zf').onclick=fit;$('#zc').onclick=()=>center();
+ $('#zi').onclick=()=>zoomAt(1.3,vw()/2,vh()/2);$('#zo').onclick=()=>zoomAt(1/1.3,vw()/2,vh()/2);$('#zf').onclick=fit;$('#zc').onclick=()=>ALL?center(.9):center();
  $('#tmodes').onclick=e=>{const b=e.target.closest('[data-m]');if(b){mode=b.dataset.m;closeSheet();tree(v,focusId)}if(e.target.id==='tfind')findModal()};
  setTimeout(()=>$('#thint')&&($('#thint').style.opacity=0),5000);
  center();if(selId)openSheet(selId);
@@ -161,7 +169,7 @@ function route(){const v=$('#view');v.classList.remove('tree');v._onresize=null;
  if(!['tree'].includes(a))closeSheet();
  if(!/^(home|tree|people|p|stories|s|scans)$/.test(a)){const id=byName(h);if(id){location.hash='#/p/'+id;return}location.hash='#/home';return}
  document.querySelectorAll('#tabs a').forEach(x=>x.classList.toggle('on',x.dataset.t===({p:'people',s:'stories'}[a]||a)));
- ({home:()=>home(v),tree:()=>tree(v,b),people:()=>people(v),p:()=>personPage(v,b),stories:()=>stories(v),s:()=>story(v,b),scans:()=>scans(v)})[a]();
+ ({home:()=>home(v),tree:()=>{if(!b)mode='all';else if(mode==='all')mode='both';tree(v,b)},people:()=>people(v),p:()=>personPage(v,b),stories:()=>stories(v),s:()=>story(v,b),scans:()=>scans(v)})[a]();
  if(a!=='tree')scrollTo(0,0);v.focus({preventScroll:true})}
 addEventListener('hashchange',route);addEventListener('resize',()=>{const v=$('#view');v._onresize&&v._onresize()});
 Promise.all([fetch('tree-data.json').then(r=>r.json()),fetch('data.json').then(r=>r.json())]).then(([t,d])=>{T=t;D=d;P=t.p;COL=t.cols;NAME=Object.entries(P).map(([id,p])=>({id,n:nz(p.n)}));
