@@ -52,7 +52,7 @@ const byName=nm=>{const t=nz(nm).split(' ');const f=t[0],l=t[t.length-1];return 
 const rx=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 const MAT={};
 function matchFor(id){if(MAT[id])return MAT[id];const w=P[id].n.split(/\s+/).filter(x=>/^[A-Za-z]/.test(x));const f=w[0],l=w[w.length-1];let st=[],ar=[];
- if(f&&l&&f!==l){const re=new RegExp('\\b'+rx(f)+'\\b[^.\\n]{0,28}\\b'+rx(l)+'\\b','i');
+ if(f&&l&&f!==l){const re=new RegExp('\\b'+rx(f)+'\\b(?:(?!\\b(?:married|wife|husband|and)\\b)[^.\\n]){0,28}\\b'+rx(l)+'\\b','i');
   st=D.order.filter(s=>D.stories[s].person_id===id||re.test(D.stories[s].full+' '+D.stories[s].text));
   ar=D.arts.filter(a=>re.test(a.title+' '+a.cap)||a.stories.some(s=>D.stories[s]&&D.stories[s].person_id===id))}
  else{st=D.order.filter(s=>D.stories[s].person_id===id);ar=D.arts.filter(a=>a.stories.some(s=>D.stories[s]&&D.stories[s].person_id===id))}
@@ -93,11 +93,12 @@ function findBox(inputId,resId,onPick){const i=$('#'+inputId),r=$('#'+resId);i.o
  r.onclick=e=>{const b=e.target.closest('[data-id]');if(b)onPick(b.dataset.id)}}
 function home(v){const q=D.stories?Object.keys(D.stories).length:0;
  v.innerHTML=`<section class="hero"><h1>${me&&P[me]?'Welcome back, '+esc(first(me)):'Welcome to our family tree'}</h1><p class="lead">${P?Object.keys(P).length:0} people, four families, one big story. ${me&&P[me]?'':'Start by finding your name.'}</p></section>
+<div class="tcard"><img src="qr.svg" alt="QR code for family.bessinger.fyi" width="96" height="96"><div><b>211 people, four families, one story.</b><br>Ask Marsha how Barban became Baratz.<div class="tsz">Text size <button data-hfs="0">A</button><button data-hfs="1" style="font-size:1.15em">A</button><button data-hfs="2" style="font-size:1.35em">A</button></div><small>Updated Nov 25, 2026</small></div></div>
 ${me&&P[me]?`<div class="row"><a class="btn pri" href="#/p/${me}">My page</a><a class="btn" href="#/tree/${me}">My family tree</a></div><h3 style="margin-top:22px">Look up someone else</h3>`:'<h3>Find your name</h3>'}
 <div class="find"><input id="fi" class="search" type="search" placeholder="Type your first or last name" autocomplete="off" aria-label="Find a person"><div id="fr"></div></div>
 <div class="tiles"><a class="tile" style="--c:#3D6B4F" href="#/related/${me&&P[me]?me:''}/"><b>How are we related?</b><span>Pick any two people</span></a><a class="tile" style="--c:#2D5B63" href="#/tree"><b>Explore the tree</b><span>Drag, pinch and tap</span></a><a class="tile" style="--c:#9C4A2B" href="#/people"><b>Everyone</b><span>${Object.keys(P).length} people A to Z</span></a><a class="tile" style="--c:#A87A1F" href="#/stories"><b>Stories</b><span>${q} life stories</span></a><a class="tile" style="--c:#6A4A7E" href="#/scans"><b>Scans</b><span>${D.arts.length} photos and clippings</span></a></div>
 <button class="btn" id="hh" style="width:100%">Help us solve these missing pieces</button>`;
- findBox('fi','fr',id=>{if(!me||confirm_me(id))location.hash='#/p/'+id});$('#hh').onclick=help}
+ document.querySelectorAll('[data-hfs]').forEach(b=>b.onclick=()=>setFS(b.dataset.hfs));findBox('fi','fr',id=>{if(!me||confirm_me(id))location.hash='#/p/'+id});$('#hh').onclick=help}
 const confirm_me=()=>true;
 function related(v,a,b){a=P[a]?a:(me&&P[me]?me:'');b=P[b]?b:'';
  v.innerHTML=`<h1>How are they related?</h1><p class="lead">Pick two people and see the connection.</p>
@@ -186,7 +187,7 @@ function tree(v,id){id=id||me||T.me;if(!P[id])id=T.me;focusId=id;v.classList.add
  let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;nodes.forEach(n=>{minx=Math.min(minx,n.x-CW/2);maxx=Math.max(maxx,n.x+CW/2);miny=Math.min(miny,n.y-CH/2);maxy=Math.max(maxy,n.y+CH/2)});BB={minx,maxx,miny,maxy};
  const pad=60;w.style.width=(maxx-minx+2*pad)+'px';w.style.height=(maxy-miny+2*pad)+'px';const ox=-minx+pad,oy=-miny+pad;
  const path=e=>{if(e.pts){return`<path d="M${e.pts.map(p=>(p[0]+ox)+' '+(p[1]+oy)).join('L')}" stroke="${e.k?'#b45309':'#8d8272'}" stroke-width="2.5" ${e.k?'stroke-dasharray="6 5"':''} fill="none"/>`}const[x1,y1,x2,y2,k]=e;const X1=x1+ox,Y1=y1+oy,X2=x2+ox,Y2=y2+oy;if(k===2)return`<path d="M${X1} ${Y1}H${X2}" stroke="#8a5f0c" stroke-width="3" fill="none"/>`;const my=(Y1+Y2)/2;return`<path d="M${X1} ${Y1}V${my}H${X2}V${Y2}" stroke="${k?'#b45309':'#8d8272'}" stroke-width="2.5" ${k?'stroke-dasharray="6 5"':''} fill="none"/>`};
- w.innerHTML=`<svg width="${maxx-minx+2*pad}" height="${maxy-miny+2*pad}">${edges.map(path).join('')}</svg>`+nodes.map(n=>{const left=n.x+ox-CW/2,top=n.y+oy-CH/2;if(n.ghost)return`<div class="tc ghost" style="left:${left}px;top:${top}px;--c:#b45309"><b>? ${esc(n.ghost)}</b></div>`;const m=matchFor(n.id),bd=m.ar.length+m.st.length;return`<button class="tc${n.id===id?' focus':''}" data-id="${n.id}" style="left:${left}px;top:${top}px;--c:${col(n.id)}"><b>${esc(P[n.id].n)}</b><small>${yrs(n.id)}</small>${bd?`<span class="bd">&#128247; ${bd}</span>`:''}</button>`}).join('');
+ w.innerHTML=`<svg width="${maxx-minx+2*pad}" height="${maxy-miny+2*pad}">${edges.map(path).join('')}</svg>`+nodes.map(n=>{const left=n.x+ox-CW/2,top=n.y+oy-CH/2;if(n.ghost)return`<div class="tc ghost" style="left:${left}px;top:${top}px;--c:#b45309"><b>? ${esc(n.ghost)}</b></div>`;const m=matchFor(n.id),bd=m.ar.length;return`<button class="tc${n.id===id?' focus':''}" data-id="${n.id}" style="left:${left}px;top:${top}px;--c:${col(n.id)}"><b>${esc(P[n.id].n)}</b><small>${yrs(n.id)}</small>${bd?`<span class="bd" title="${bd} scans and photos on this person's page">&#128247; ${bd}</span>`:''}</button>`}).join('');
  const vw=()=>tv.clientWidth,vh=()=>tv.clientHeight,TOP=ALL?112:60;const fnode=nodes.find(n=>n.id===id)||nodes[0];const fpos={x:fnode.x+ox,y:fnode.y+oy};
  const apply=()=>{w.style.transform=`translate(${TX}px,${TY}px) scale(${S})`;mm()};
  const center=(sc)=>{if(ALL&&!sc){const ww=maxx-minx+2*pad,hh=maxy-miny+2*pad;if(Math.min(vw()/ww,(vh()-TOP)/hh)<.12&&!window._fitAll){center(.4);return}fit();return}if(ALL){S=sc;TX=vw()/2-fpos.x*S;TY=(vh()+TOP)/2-fpos.y*S;apply();return}const near=nodes.filter(n=>Math.abs(n.y)<=SY);let a=1e9,b=-1e9,c=1e9,d=-1e9;near.forEach(n=>{a=Math.min(a,n.x-CW/2);b=Math.max(b,n.x+CW/2);c=Math.min(c,n.y-CH/2);d=Math.max(d,n.y+CH/2)});S=sc||Math.max(.62,Math.min(1,(vw()-20)/(b-a),(vh()-110)/(d-c)));TX=vw()/2-((a+b)/2+ox)*S;TY=(vh()+60)/2-((c+d)/2+oy)*S;apply()};
