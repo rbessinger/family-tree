@@ -67,11 +67,11 @@ function lightbox(slug){const a=D.arts.find(x=>x.slug===slug);const lk=a.stories
  modal(`<button class="btn sm" data-x style="float:right;color:#fff;border-color:#fff">Close</button><img src="${slug}.jpg" alt="${esc(a.title)}"><h3>${esc(a.title)}</h3><p>${esc(a.cap)}</p><div class="row">${lk}</div>`,'lb')}
 function menu(){modal(`<button class="btn sm x" data-x>Close</button><h2>Menu</h2><h3>Text size</h3><div class="seg" id="fsg">${['Normal','Large','Extra large'].map((l,i)=>`<button data-fs="${i}" aria-pressed="${(document.documentElement.dataset.fs||'0')==i}">${l}</button>`).join('')}</div>
 <h3>Who are you?</h3><p class="lead">${me&&P[me]?'You are set as '+esc(P[me].n)+'.':'Pick your name and every page will say how you are related.'}</p><div class="row"><button class="btn" id="chg">${me?'Change my name':'Pick my name'}</button>${me?'<button class="btn" id="clr">Forget me</button>':''}</div>
-<h3>More</h3><div class="row"><a class="btn" href="#/related//" id="mrel">How are two people related?</a><button class="btn" id="hlp">Help us solve these</button><a class="btn" href="tree.html">Original poster view</a><a class="btn" href="Our-Family-Tree-poster-36x48.pdf">Poster PDF</a></div>`);
+<h3>More</h3><div class="row"><a class="btn" href="#/related//" id="mrel">How are two people related?</a><a class="btn" href="#/fan/" id="mfan">Fan chart</a><a class="btn" href="#/privacy" id="mpriv">Privacy</a><button class="btn" id="hlp">Help us solve these</button><a class="btn" href="tree.html">Original poster view</a><a class="btn" href="Our-Family-Tree-poster-36x48.pdf">Poster PDF</a></div>`);
  $('#fsg').onclick=e=>{const b=e.target.closest('[data-fs]');if(b){setFS(b.dataset.fs);$('#fsg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b))}};
  $('#chg').onclick=()=>{closeModal();location.hash='#/home';setTimeout(()=>$('#fi')&&$('#fi').focus(),200)};
  const c=$('#clr');if(c)c.onclick=()=>{me=null;LS.del('me');REL={};closeModal();chip();route()};
- $('#hlp').onclick=help;$('#mrel').onclick=()=>closeModal()}
+ $('#hlp').onclick=help;$('#mrel').onclick=()=>closeModal();$('#mfan').onclick=()=>closeModal();$('#mpriv').onclick=()=>closeModal()}
 function help(){modal(`<button class="btn sm x" data-x>Close</button><h2>Help us solve these</h2><p class="lead">Missing pieces on the tree. Even a guess or a half-memory helps. Tell Ross.</p>${D.help}`)}
 $('#menuBtn').onclick=menu;
 const ASK=window.ASK_URL||'';let AH=[];
@@ -87,9 +87,47 @@ function ask(){const eg=me&&P[me]?['How am I related to Marvin Schatzman?','Who 
 $('#askBtn').onclick=ask;
 function chip(){const c=$('#meChip');if(me&&P[me]){c.textContent=first(me);c.classList.remove('hide')}else c.classList.add('hide')}
 $('#meChip').onclick=()=>{location.hash='#/p/'+me};
+
+function onboard(){modal(`<button class="btn sm x" data-x>Skip for now</button><h2>Who are you?</h2><p class="lead">Pick your name and every page will tell you how each person is related to you.</p><div class="find"><input id="oi" class="search" type="search" placeholder="Type your first or last name" autocomplete="off" aria-label="Your name"><div id="or"></div></div>`);LS.set('asked','1');
+ setTimeout(()=>{const o=$('#oi');if(o)o.focus()},150);
+ findBox('oi','or',id=>{setMe(id);closeModal();location.hash='#/p/'+id})}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-act="switch"]');if(b){me=null;LS.del('me');REL={};chip();onboard()}});
+
+function fan(v,id,gens){id=P[id]?id:(me&&P[me]?me:T.me);gens=[3,4,5].includes(+gens)?+gens:4;
+ const W=900,H=520,cx=450,cy=496,r0=62,rw=(430-r0)/gens;
+ const father=x=>{const ps=(P[x].par||[]);return ps.find(y=>P[y].s==='M')||null},mother=x=>{const ps=(P[x].par||[]);return ps.find(y=>P[y].s==='F')||null};
+ let out='';const pt=(r,a)=>[cx+r*Math.cos(a),cy-r*Math.sin(a)];
+ const wedge=(r1,r2,a1,a2)=>{const[x1,y1]=pt(r2,a1),[x2,y2]=pt(r2,a2),[x3,y3]=pt(r1,a2),[x4,y4]=pt(r1,a1);return`M${x1},${y1}A${r2},${r2} 0 0 1 ${x2},${y2}L${x3},${y3}A${r1},${r1} 0 0 0 ${x4},${y4}Z`};
+ const lines=(n,max)=>{const w=n.split(' ').filter(Boolean);if(w.length<2)return[n];const l=w.pop();let f=w.join(' ');if(f.length>max)f=f.slice(0,max-1)+'…';return[f,l.length>max+2?l.slice(0,max+1)+'…':l]};
+ const draw=(x,g,k)=>{const n=1<<g,a1=Math.PI-k*Math.PI/n,a2=Math.PI-(k+1)*Math.PI/n,r1=r0+(g-1)*rw,r2=r0+g*rw,am=(a1+a2)/2,rm=(r1+r2)/2,deg=am*180/Math.PI;
+  if(!x){out+=`<path d="${wedge(r1,r2,a1,a2)}" fill="#faf6ee" stroke="#d9cfbd" stroke-dasharray="3 3"/>`;return}
+  const p=P[x],c=col(x),radial=g>=3,fs=g>=5?8.5:g>=4?10:12;
+  const nm=lines(p.n.replace(/ \(.*/,'').replace(/, (wife|husband) of.*/,''),radial?(g>=5?11:14):18);const y=yrs(x).replace('Deceased, dates not recorded','dates unknown').replace('Dates not recorded','dates unknown');
+  let rot=radial?(deg>90?180-deg:-deg):90-deg;const[tx,ty]=pt(rm,am);
+  const tl=[...nm,y];const lh=fs*1.15;
+  out+=`<a href="#/p/${x}"><path d="${wedge(r1,r2,a1,a2)}" fill="${c}" fill-opacity="${.16+.04*g}" stroke="#fff" stroke-width="1.5"/><text transform="translate(${tx},${ty}) rotate(${rot})" text-anchor="middle" font-size="${fs}" fill="#2b2218">${tl.map((t,i)=>`<tspan x="0" y="${(i-(tl.length-1)/2)*lh+fs*.35}"${i===tl.length-1?' fill-opacity=".7" font-size="'+fs*.85+'"':i===0?' font-weight="700"':''}>${esc(t)}</tspan>`).join('')}</text></a>`};
+ const go=(x,g,k)=>{if(g>gens)return;draw(x,g,k);go(x&&father(x),g+1,k*2);go(x&&mother(x),g+1,k*2+1)};
+ go(father(id),1,0);go(mother(id),1,1);
+ const c0=P[id];const l0=lines(c0.n,12);
+ out+=`<circle cx="${cx}" cy="${cy}" r="${r0-4}" fill="${col(id)}" fill-opacity=".3" stroke="#fff" stroke-width="2"/><text x="${cx}" y="${cy-22}" text-anchor="middle" font-size="12" font-weight="700" fill="#2b2218">${l0.map((t,i)=>`<tspan x="${cx}" dy="${i?14:0}">${esc(t)}</tspan>`).join('')}<tspan x="${cx}" dy="15" font-size="10.5" font-weight="400" fill-opacity=".7">${esc(yrs(id).replace('Deceased, dates not recorded','dates unknown'))}</tspan></text>`;
+ v.innerHTML=`<div class="fanbar"><h1>Fan chart</h1><p class="lead">${esc(c0.n)} in the middle, parents on the first ring, then grandparents and further back. Tap anyone to open their page.</p><div class="seg" id="fg">${[3,4,5].map(n=>`<button data-g="${n}" aria-pressed="${n===gens}">${n} generations</button>`).join('')}</div><div class="row" style="margin-top:10px"><button class="btn" id="fpick">Center on someone else</button><button class="btn" id="fprint">Print this chart</button><a class="btn" href="#/p/${id}">Back to ${esc(first(id))}</a></div><div class="find" id="ffind" style="display:none"><input id="fi2" class="search" type="search" placeholder="Type a name" autocomplete="off"><div id="fr2"></div></div></div><svg id="fansvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Fan chart of ${esc(c0.n)}'s ancestors">${out}</svg><p class="lead fannote">Dashed slices are ancestors we have not found yet.</p>`;
+ $('#fg').onclick=e=>{const b=e.target.closest('[data-g]');if(b)location.hash='#/fan/'+id+'/'+b.dataset.g};
+ $('#fprint').onclick=()=>window.print();
+ $('#fpick').onclick=()=>{$('#ffind').style.display='block';$('#fi2').focus()};
+ findBox('fi2','fr2',x=>{location.hash='#/fan/'+x+'/'+gens})}
+
+const conf=c=>/petition|manifest|census|death record|birth record|certificate|obituary|Social Security|hint sweep|burial record|naturalization|index/i.test(c)?['doc','Documented']:['fam','Family account'];
+function tline(id){const p=P[id];const by=p.y&&p.y[0];if(!by&&!(p.f&&p.f.length))return'';const ev=[];const yr=t=>{const m=String(t).match(/\b(1[5-9]\d\d|20\d\d)\b/);return m?+m[1]:null};
+ const have=new Set((p.f||[]).map(f=>f[0]));
+ if(by&&!have.has('Born'))ev.push([by,'Born'+(p.bp?' in '+p.bp:''),'b']);
+ (p.f||[]).forEach(([a,b])=>{const y=yr(b);if(y)ev.push([y,a+': '+b.replace(/ \(see note\)/,''),a[0].toLowerCase()])});
+ (p.ch||[]).map(c=>P[c]).filter(c=>c&&c.y&&c.y[0]).forEach(c=>ev.push([c.y[0],'Child born: '+c.n,'c']));
+ if(p.y&&p.y[1]&&!have.has('Died'))ev.push([p.y[1],'Died','d']);
+ ev.sort((a,b)=>a[0]-b[0]);if(ev.length<3)return'';
+ return`<h2>Life timeline</h2><ol class="tl">${ev.map(([y,t,k])=>`<li class="k-${k}"><b>${y}</b>${by&&y>=by?`<small>age ${y-by}</small>`:''}<span>${esc(t)}</span></li>`).join('')}</ol>`}
 function setMe(id){me=id;LS.set('me',id);REL={};chip()}
 /* ---------- views ---------- */
-function findBox(inputId,resId,onPick){const i=$('#'+inputId),r=$('#'+resId);i.oninput=()=>{const ids=find(i.value);r.innerHTML=ids.length?`<div class="res">${ids.map(id=>`<button data-id="${id}"><span>${esc(P[id].n)}</span><small>${yrs(id)}</small></button>`).join('')}</div>`:(i.value.trim()?'<div class="res"><button disabled>No match. Try just a last name.</button></div>':'')};
+function findBox(inputId,resId,onPick){const i=$('#'+inputId),r=$('#'+resId);i.oninput=()=>{const ids=find(i.value);r.innerHTML=ids.length?`<div class="res">${ids.map(id=>`<button data-id="${id}"><span>${esc(P[id].n)}</span><small>${yrs(id)}${me&&P[me]&&id!==me&&rel(id)?' · your '+esc(rel(id)):''}</small></button>`).join('')}</div>`:(i.value.trim()?'<div class="res"><button disabled>No match. Try just a last name.</button></div>':'')};
  r.onclick=e=>{const b=e.target.closest('[data-id]');if(b)onPick(b.dataset.id)}}
 function home(v){const q=D.stories?Object.keys(D.stories).length:0;
  v.innerHTML=`<section class="hero"><h1>${me&&P[me]?'Welcome back, '+esc(first(me)):'Welcome to our family tree'}</h1><p class="lead">${P?Object.keys(P).length:0} people, four families, one big story. ${me&&P[me]?'':'Start by finding your name.'}</p></section>
@@ -117,12 +155,12 @@ function related(v,a,b){a=P[a]?a:(me&&P[me]?me:'');b=P[b]?b:'';
  else $('#rout').innerHTML=a||b?'<p class="lead" style="margin-top:14px">Now pick the other person.</p>':''}
 function personPage(v,id){const p=P[id];if(!p){v.innerHTML='<p>Person not found.</p>';return}const m=matchFor(id),r=rel(id),sib=[...new Set(p.par.flatMap(x=>P[x].ch))].filter(x=>x!==id);
  const sec=(t,items)=>items.length?`<h2>${t}</h2>${items.join('')}`:'';
- v.innerHTML=`<div class="pname" style="--c:${col(id)}"><span class="kick">${esc(p.b==='root'?'Our family':p.b==='W'?'Siegel family':p.b+' branch')}</span><h1>${esc(p.n)}</h1><div class="yrs">${yrs(id)}${place(id)?' · born in '+esc(place(id)):''}</div>${r?`<div class="rel">${esc(r[0].toUpperCase()+r.slice(1))}</div>`:''}</div>
-<div class="row"><a class="btn pri" href="#/tree/${id}">See on the tree</a>${me===id?'<span class="btn" style="border-style:dashed">This is you</span>':`<button class="btn" id="im">This is me</button>`}<a class="btn" href="#/related/${id}/">How are they related to...</a></div>
+ v.innerHTML=`<div class="pname" style="--c:${col(id)}"><span class="kick">${esc(p.b==='root'?'Our family':p.b==='W'?'Siegel family':p.b+' branch')}</span><h1>${esc(p.n)}</h1>${p.aka?`<div class="aka">Also known as ${esc(p.aka)}</div>`:''}<div class="yrs">${yrs(id)}${place(id)?' · born in '+esc(place(id)):''}</div>${r?`<div class="rel">${esc(p.n)} is ${/^your |^you/.test(r)?'':'your '}${esc(r)}.</div>`:''}${me&&P[me]&&id!==me?`<div class="notyou">You are ${esc(P[me].n)}. <button class="lnk" data-act="switch">Not you? Switch person</button></div>`:''}</div>
+<div class="row"><a class="btn pri" href="#/tree/${id}">See on the tree</a>${me===id?'<span class="btn" style="border-style:dashed">This is you</span>':`<button class="btn" id="im">This is me</button>`}<a class="btn" href="#/related/${id}/">How are they related to...</a><a class="btn" href="#/fan/${id}/4">Fan chart</a></div>
 ${!me?'<p class="lead" style="margin:10px 0 0">Tap <b>This is me</b> and every page will say how this person is related to you.</p>':''}
-${p.fl?`<div class="flag"><b>Note</b> ${esc(p.fl)}</div>`:''}${p.f?`<h2>Facts and sources</h2><dl class="facts">${p.f.map(([a,b,c])=>`<dt>${esc(a)}</dt><dd>${esc(b)}<span class="src">Source: ${esc(c)}</span></dd>`).join('')}</dl>`:''}
+${p.fl?`<div class="flag"><b>Note</b> ${esc(p.fl)}</div>`:''}${p.f?`<h2>Facts and sources</h2><dl class="facts">${p.f.map(([a,b,c])=>`<dt>${esc(a)}</dt><dd>${esc(b)} <span class="conf ${conf(c)[0]}">${conf(c)[1]}</span><span class="src">Source: ${esc(c)}</span></dd>`).join('')}</dl>`:''}
 ${p.q?`<div class="q"><b>Help us solve this</b><br>${esc(p.q)} If you know, tell Ross.</div>`:''}
-${sec('Parents',p.par.map(x=>pbtn(x,P[x].s==='M'?'Father':P[x].s==='F'?'Mother':'Parent')))}
+${tline(id)}${sec('Parents',p.par.map(x=>pbtn(x,P[x].s==='M'?'Father':P[x].s==='F'?'Mother':'Parent')))}
 ${sec(p.sp.length>1?'Spouses':'Spouse',p.sp.map(x=>pbtn(x,P[x].s==='M'?'Husband':'Wife')))}
 ${sec('Children',p.ch.map(x=>pbtn(x,P[x].s==='M'?'Son':'Daughter')))}
 ${sec('Siblings',sib.map(x=>pbtn(x,P[x].s==='M'?'Brother':'Sister')))}
@@ -221,12 +259,12 @@ function findModal(){modal(`<button class="btn sm x" data-x>Close</button><h2>Ju
 /* ---------- router ---------- */
 function route(){const v=$('#view');v.classList.remove('tree');v._onresize=null;if(!T)return;let h=decodeURIComponent(location.hash.replace(/^#\/?/,''));if(!h)h='home';const[a,b,c2]=h.split('/');
  if(!['tree'].includes(a))closeSheet();
- if(!/^(home|tree|people|p|stories|s|scans|related)$/.test(a)){const id=byName(h);if(id){location.hash='#/p/'+id;return}location.hash='#/home';return}
+ if(!/^(home|tree|people|p|stories|s|scans|related|fan|privacy)$/.test(a)){const id=byName(h);if(id){location.hash='#/p/'+id;return}location.hash='#/home';return}
  document.querySelectorAll('#tabs a').forEach(x=>x.classList.toggle('on',x.dataset.t===({p:'people',s:'stories'}[a]||a)));
- ({home:()=>home(v),tree:()=>{if(!b)mode='all';else if(mode==='all')mode='both';tree(v,b)},people:()=>people(v),p:()=>personPage(v,b),stories:()=>stories(v),s:()=>story(v,b),scans:()=>scans(v),related:()=>related(v,b,c2)})[a]();
+ ({home:()=>home(v),tree:()=>{if(!b)mode='all';else if(mode==='all')mode='both';tree(v,b)},people:()=>people(v),p:()=>personPage(v,b),stories:()=>stories(v),s:()=>story(v,b),scans:()=>scans(v),related:()=>related(v,b,c2),fan:()=>fan(v,b,c2),privacy:()=>{v.innerHTML=`<h1>Privacy</h1><p class="lead">This site is meant for our family. Here is how we handle people who may still be alive.</p><h2>Living people</h2><p>Anyone not known to have died shows only their name and how they are related. No birth dates, birthplaces, photos, stories or scans are published for them. The data this page loads contains none of that for living people.</p><h2>People who died long ago</h2><p>Someone with no death date who was born more than 100 years ago, or whose children were born before 1935, is shown as deceased with dates not recorded. Nobody is marked deceased without evidence of that kind.</p><h2>Corrections</h2><p>Facts here come from the family Ancestry tree and the records and calls named under each fact. If something is wrong, or you want something removed, tell Ross and it will be fixed.</p><p><a class="btn" href="#/home">Back home</a></p>`}})[a]();
  if(a!=='tree')scrollTo(0,0);v.focus({preventScroll:true})}
 addEventListener('hashchange',route);addEventListener('resize',()=>{const v=$('#view');v._onresize&&v._onresize()});
-Promise.all([fetch('tree-data.json').then(r=>r.json()),fetch('data.json').then(r=>r.json())]).then(([t,d])=>{T=t;D=d;P=t.p;t.lay.b.forEach(r=>{GEN[r[0]]=r[1]});COL=t.cols;NAME=Object.entries(P).map(([id,p])=>({id,n:nz(p.n)}));
+Promise.all([fetch('tree-data.json').then(r=>r.json()),fetch('data.json').then(r=>r.json())]).then(([t,d])=>{T=t;D=d;P=t.p;t.lay.b.forEach(r=>{GEN[r[0]]=r[1]});COL=t.cols;NAME=Object.entries(P).map(([id,p])=>({id,n:nz(p.n+(p.aka?' '+p.aka:''))}));
  for(const s in D.stories){D.stories[s].person_id=byName(D.stories[s].person)}
- if(me&&!P[me])me=null;chip();route()}).catch(e=>{$('#view').innerHTML='<h1>Could not load</h1><p class="lead">Please refresh the page.</p>'});
+ if(me&&!P[me])me=null;chip();route();if(!me&&!LS.get('asked')&&(!location.hash||location.hash==='#/home'||location.hash==='#/'))setTimeout(onboard,700)}).catch(e=>{$('#view').innerHTML='<h1>Could not load</h1><p class="lead">Please refresh the page.</p>'});
 })();
