@@ -5,7 +5,7 @@
 const SITE = 'https://rbessinger.github.io/family-tree';
 const MODEL = 'claude-haiku-5-5';
 const MAX_ROUNDS = 8;
-const VERSION = '2026-11-25-f';
+const VERSION = '2026-11-25-g';
 const hits = new Map();
 let DB = null, DBAt = 0, memSpend = { m: '', n: 0 };
 const cors = o => ({ 'Access-Control-Allow-Origin': o, 'Access-Control-Allow-Headers': 'content-type', 'Access-Control-Allow-Methods': 'POST,OPTIONS', 'Vary': 'Origin' });
@@ -167,11 +167,11 @@ export default {
       for (let round = 0; round < MAX_ROUNDS; round++) {
         const r = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST', headers: { 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-          body: JSON.stringify({ model: MODEL, max_tokens: 900, system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }], tools: TOOLS, ...(round >= MAX_ROUNDS - 2 ? { tool_choice: { type: 'none' } } : {}), messages: msgs })
+          body: JSON.stringify({ model: MODEL, max_tokens: 3000, system: [{ type: 'text', text: SYSTEM, cache_control: { type: 'ephemeral' } }], tools: TOOLS, ...(round >= MAX_ROUNDS - 2 ? { tool_choice: { type: 'none' } } : {}), messages: msgs })
         });
         if (!r.ok) throw new Error('api ' + r.status);
         const j = await r.json(); used += (j.usage?.input_tokens || 0) + (j.usage?.output_tokens || 0) + (j.usage?.cache_creation_input_tokens || 0);
-        if (j.stop_reason !== 'tool_use') { answer = (j.content || []).map(c => c.text || '').join('').trim(); break }
+        if (j.stop_reason !== 'tool_use') { answer = (j.content || []).map(c => c.text || '').join('').trim(); if (j.stop_reason === 'max_tokens') answer = answer.replace(/\[\[[^\]]*$/, '').trim() + ' (answer shortened)'; break }
         msgs.push({ role: 'assistant', content: j.content });
         const res = [];
         for (const c of j.content.filter(c => c.type === 'tool_use')) {
