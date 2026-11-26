@@ -96,3 +96,5 @@ h1,h2,h3{line-height:1.2;margin:.2em 0 .4em}h1{font-size:1.9rem}h2{font-size:1.4
 #tbr button[data-b="*"],#tbr button[data-b="@"]{border-left-width:2px}
 #thint{bottom:calc(16px + 0px)}@media(max-width:899px){#thint{bottom:auto;top:116px;white-space:normal;text-align:center;width:max-content;max-width:86%}}
 @media(min-width:900px){#mm{width:200px}}
+
+.looked b{font-size:inherit}.looked{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:.85rem;color:#6b6254;line-height:1.4}
