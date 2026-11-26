@@ -37,13 +37,15 @@ function relRaw(a,b){let out='';
  if(bl)out=lab(bl.da,bl.db,P[b].s);
  else if(P[a].sp.includes(b))out=P[b].s==='M'?'husband':'wife';
  else{for(const s of P[b].sp){const x=blood(a,s);if(x){out=lab(x.da,x.db,P[s].s)+"'s "+(P[b].s==='M'?'husband':'wife');break}}
-  if(!out)for(const s of P[a].sp){const x=blood(s,b);if(x){out=(P[s].s==='M'?'husband':'wife')+"'s "+lab(x.da,x.db,P[b].s);break}}}
+  if(!out)for(const s of P[a].sp){const x=blood(s,b);if(x){out=(P[s].s==='M'?'husband':'wife')+"'s "+lab(x.da,x.db,P[b].s);break}}
+  if(!out)for(const s of P[a].sp){for(const t of P[b].sp){const x=blood(s,t);if(x&&x.da===1&&x.db===1&&s!==t){out=P[b].s==='M'?'brother-in-law':'sister-in-law';break}}if(out)break}}
  return out}
 function relOf(a,b){const k=a+'>'+b;if(k in REL)return REL[k];const r=relRaw(a,b);return REL[k]=!r?'':r==='you'?'you':'your '+r}
 function chain(a,x){const prev={[a]:null};let fr=[a];while(fr.length&&!(x in prev)){const nx=[];for(const i of fr)for(const p of P[i].par)if(!(p in prev)){prev[p]=i;nx.push(p)}fr=nx}const out=[];let c=x;while(c!=null&&c in prev){out.push(c);c=prev[c]}return out.reverse()}
 function pathOf(a,b){if(P[a].sp.includes(b))return{ids:[a,b],top:null};const bl=blood(a,b);if(bl){const up=chain(a,bl.x),dn=chain(b,bl.x).reverse().slice(1);return{ids:[...up,...dn],top:bl.x,bl}}
  for(const s of [...P[b].sp]){const x=blood(a,s);if(x){const up=chain(a,x.x),dn=chain(s,x.x).reverse().slice(1);return{ids:[...up,...dn,b],top:x.x,bl:x}}}
  for(const s of [...P[a].sp]){const x=blood(s,b);if(x){const up=chain(s,x.x),dn=chain(b,x.x).reverse().slice(1);return{ids:[a,...up,...dn],top:x.x,bl:x}}}
+ for(const s of [...P[a].sp])for(const t of [...P[b].sp]){const x=blood(s,t);if(x&&x.da===1&&x.db===1&&s!==t){const up=chain(s,x.x),dn=chain(t,x.x).reverse().slice(1);return{ids:[a,...up,...dn,b],top:x.x,bl:x}}}
  return null}
 const rel=id=>me&&P[me]&&id!==me?relOf(me,id):'';
 /* ---------- search & matching ---------- */

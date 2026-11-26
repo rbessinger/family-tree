@@ -5,7 +5,7 @@
 const SITE = 'https://rbessinger.github.io/family-tree';
 const MODEL = 'claude-haiku-5-5';
 const MAX_ROUNDS = 8;
-const VERSION = '2026-11-25-e';
+const VERSION = '2026-11-25-f';
 const hits = new Map();
 let DB = null, DBAt = 0, memSpend = { m: '', n: 0 };
 const cors = o => ({ 'Access-Control-Allow-Origin': o, 'Access-Control-Allow-Headers': 'content-type', 'Access-Control-Allow-Methods': 'POST,OPTIONS', 'Vary': 'Origin' });
@@ -38,6 +38,7 @@ function relRaw(P, a, b) {
   if (P[a].sp.includes(b)) return P[b].s === 'M' ? 'husband' : 'wife';
   for (const s of P[b].sp) { const x = blood(P, a, s); if (x) return lab(x.da, x.db, P[s].s) + "'s " + (P[b].s === 'M' ? 'husband' : 'wife') }
   for (const s of P[a].sp) { const x = blood(P, s, b); if (x) return (P[s].s === 'M' ? 'husband' : 'wife') + "'s " + lab(x.da, x.db, P[b].s) }
+  for (const s of P[a].sp) for (const t of P[b].sp) { const x = blood(P, s, t); if (x && x.da === 1 && x.db === 1 && s !== t) return P[b].s === 'M' ? 'brother-in-law' : 'sister-in-law' }
   return '';
 }
 function chain(P, a, x) { const prev = { [a]: null }; let fr = [a]; while (fr.length && !(x in prev)) { const nx = []; for (const i of fr) for (const p of P[i].par) if (!(p in prev)) { prev[p] = i; nx.push(p) } fr = nx } const out = []; let c = x; while (c != null && c in prev) { out.push(c); c = prev[c] } return out.reverse() }
@@ -46,6 +47,7 @@ function pathIds(P, a, b) {
   const bl = blood(P, a, b); if (bl) return [...chain(P, a, bl.x), ...chain(P, b, bl.x).reverse().slice(1)];
   for (const s of P[b].sp) { const x = blood(P, a, s); if (x) return [...chain(P, a, x.x), ...chain(P, s, x.x).reverse().slice(1), b] }
   for (const s of P[a].sp) { const x = blood(P, s, b); if (x) return [a, ...chain(P, s, x.x), ...chain(P, b, x.x).reverse().slice(1)] }
+  for (const s of P[a].sp) for (const t of P[b].sp) { const x = blood(P, s, t); if (x && x.da === 1 && x.db === 1 && s !== t) return [a, ...chain(P, s, x.x), ...chain(P, t, x.x).reverse().slice(1), b] }
   return null;
 }
 
