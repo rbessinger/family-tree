@@ -60,6 +60,18 @@ function menu(){modal(`<button class="btn sm x" data-x>Close</button><h2>Menu</h
  $('#hlp').onclick=help}
 function help(){modal(`<button class="btn sm x" data-x>Close</button><h2>Help us solve these</h2><p class="lead">Missing pieces on the tree. Even a guess or a half-memory helps. Tell Ross.</p>${D.help}`)}
 $('#menuBtn').onclick=menu;
+const ASK=window.ASK_URL||'';let AH=[];
+if(ASK)$('#askBtn').classList.remove('hide');
+const linkify=t=>esc(t).replace(/\[\[story:([a-z0-9-]+)\]\]/g,(m,s)=>D.stories[s]?`<a href="#/s/${s}" data-x>${esc(D.stories[s].title)}</a>`:'').replace(/\[\[([^\]]+)\]\]/g,(m,n)=>{const id=byName(n);return id?`<a href="#/p/${id}" data-x>${n}</a>`:n}).replace(/\n/g,'<br>');
+function ask(){const eg=me&&P[me]?['How am I related to Marvin Schatzman?','Who in our family came from Poland?','What is the story of my grandparents?']:['Who is the oldest person on the tree?','Who came to America from Europe?','Tell me about the Baratz name change'];
+ modal(`<button class="btn sm x" data-x>Close</button><h2>Ask about our family</h2><p class="lead">Answers come only from the stories and records on this site. If it is not here, it will say so.</p><div id="alog"></div><div class="row" id="aeg">${eg.map(e=>`<button class="fc" data-q="${esc(e)}">${esc(e)}</button>`).join('')}</div><div class="find"><input id="ain" class="search" type="text" maxlength="400" placeholder="Type your question" aria-label="Your question"></div><button class="btn pri" id="asend" style="width:100%">Ask</button>`);
+ const log=$('#alog'),inp=$('#ain');
+ const go=async q=>{q=q.trim();if(!q)return;$('#aeg').remove();inp.value='';log.insertAdjacentHTML('beforeend',`<p><b>You:</b> ${esc(q)}</p><p id="aw" class="lead">Thinking…</p>`);
+  const rel=Object.keys(P).map(id=>{const r=me&&P[me]?relOf(me,id):'';return r&&id!==me?P[id].n+': '+r:''}).filter(Boolean).join('\n');
+  try{const r=await fetch(ASK,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({q,h:AH,me:me&&P[me]?P[me].n:'',rel})});const j=await r.json();$('#aw').remove();log.insertAdjacentHTML('beforeend',`<div class="card" style="--c:#C9962B"><span class="kick">Answer</span><div style="font-size:1.02rem;line-height:1.55;margin-top:6px">${linkify(j.answer||'No answer.')}</div></div>`);AH.push({role:'user',content:q},{role:'assistant',content:j.answer||''});AH=AH.slice(-8)}catch(e){$('#aw').remove();log.insertAdjacentHTML('beforeend','<p class="lead">Could not reach the helper. Please try again.</p>')}
+  $('#mbox').scrollTop=$('#mbox').scrollHeight};
+ $('#asend').onclick=()=>go(inp.value);inp.onkeydown=e=>{if(e.key==='Enter')go(inp.value)};$('#aeg').onclick=e=>{const b=e.target.closest('[data-q]');if(b)go(b.dataset.q)};setTimeout(()=>inp.focus(),80)}
+$('#askBtn').onclick=ask;
 function chip(){const c=$('#meChip');if(me&&P[me]){c.textContent=first(me);c.classList.remove('hide')}else c.classList.add('hide')}
 $('#meChip').onclick=()=>{location.hash='#/p/'+me};
 function setMe(id){me=id;LS.set('me',id);REL={};chip()}

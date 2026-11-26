@@ -1,0 +1,1 @@
+window.ASK_URL='';
