@@ -115,7 +115,7 @@ LINKS: when you mention a person, write their exact name inside double square br
 export default {
   async fetch(req, env) {
     const origin = req.headers.get('Origin') || '';
-    const ok = origin === 'https://rbessinger.github.io' || origin.startsWith('http://localhost');
+    const ok = origin === 'https://family.bessinger.fyi' || origin === 'https://rbessinger.github.io' || origin.startsWith('http://localhost');
     const h = cors(ok ? origin : SITE);
     if (req.method === 'OPTIONS') return new Response(null, { headers: h });
     if (req.method !== 'POST' || !ok) return new Response('no', { status: 403, headers: h });
