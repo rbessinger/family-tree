@@ -64,7 +64,7 @@ h1,h2,h3{line-height:1.2;margin:.2em 0 .4em}h1{font-size:1.9rem}h2{font-size:1.4
 #tmodes{position:absolute;left:10px;top:10px;right:10px;display:flex;gap:8px;z-index:5;overflow-x:auto}
 #tmodes button{flex:none;min-height:46px;padding:6px 16px;border-radius:999px;border:2px solid var(--line);background:#fff;font-family:system-ui,sans-serif;font-weight:600;font-size:15px;box-shadow:0 1px 4px #0002}
 #tmodes button[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
-#mm{position:absolute;left:12px;bottom:14px;width:150px;height:auto;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 2px 8px #0003;z-index:5;display:none}
+#mm{position:absolute;left:12px;bottom:14px;width:130px;height:auto;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 2px 8px #0003;z-index:5;display:block;touch-action:none}
 #thint{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:#000b;color:#fff;border-radius:999px;padding:8px 16px;font-size:14px;font-family:system-ui,sans-serif;z-index:4;pointer-events:none;white-space:nowrap;transition:opacity .6s}
 /* sheet + modal */
 .sheet{position:fixed;z-index:50;left:0;right:0;background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -8px 30px #0004;bottom:calc(var(--tab) + env(safe-area-inset-bottom));padding:14px 18px 18px;max-height:62vh;overflow:auto;transform:translateY(120%);visibility:hidden;transition:transform .25s,visibility .25s}
@@ -91,3 +91,8 @@ h1,h2,h3{line-height:1.2;margin:.2em 0 .4em}h1{font-size:1.9rem}h2{font-size:1.4
 #mbox.lb .btn{background:#222;color:#fff;border-color:#fff}#mbox.lb h3{margin-top:.8em}
 
 .rel.big{font-size:1.15rem;line-height:1.4;padding:14px 16px;margin:16px 0}.path{display:flex;flex-direction:column;gap:2px}.path .arrow{text-align:center;color:#8d8272;font-size:1.2rem;line-height:1}
+#tbr{position:absolute;left:10px;right:10px;top:64px;display:flex;gap:8px;z-index:5;overflow-x:auto;scrollbar-width:none}#tbr::-webkit-scrollbar{display:none}
+#tbr button{flex:none;min-height:40px;padding:4px 14px;border-radius:999px;border:2px solid var(--line);border-left:10px solid var(--c,#8d8272);background:#fff;font-family:system-ui,sans-serif;font-weight:600;font-size:14px;box-shadow:0 1px 4px #0002}
+#tbr button[data-b="*"],#tbr button[data-b="@"]{border-left-width:2px}
+#thint{bottom:calc(16px + 0px)}@media(max-width:899px){#thint{bottom:auto;top:116px;white-space:normal;text-align:center;width:max-content;max-width:86%}}
+@media(min-width:900px){#mm{width:200px}}
