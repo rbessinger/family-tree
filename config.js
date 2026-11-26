@@ -1,1 +1,1 @@
-window.ASK_URL='';
+window.ASK_URL='https://family-ask.rossbessinger.workers.dev';
