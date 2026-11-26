@@ -119,3 +119,5 @@ h1,h2,h3{line-height:1.2;margin:.2em 0 .4em}h1{font-size:1.9rem}h2{font-size:1.4
 .conf{display:inline-block;margin-left:6px;padding:1px 7px;border-radius:99px;font-size:.72rem;font-weight:600;vertical-align:middle}.conf.doc{background:#dcebdd;color:#24562d}.conf.fam{background:#f4e6c6;color:#7a5410}
 .tl{list-style:none;margin:6px 0 16px;padding:0 0 0 14px;border-left:3px solid #d9cfbd}.tl li{position:relative;padding:4px 0 8px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline}.tl li:before{content:"";position:absolute;left:-22px;top:11px;width:11px;height:11px;border-radius:50%;background:#A87A1F;border:2px solid #fffdf8}
 .tl .k-c:before{background:#2D5B63}.tl .k-d:before{background:#7a6f62}.tl .k-m:before{background:#9C4A2B}.tl small{color:#7a6f62}
+
+.ol,.ol ul{list-style:none;margin:0;padding-left:18px;border-left:2px solid #e3d9c8}.ol{padding-left:0;border:0}.ol li{margin:4px 0}.ol a{text-decoration:none;color:inherit}.ol small{color:#7a6f62}
