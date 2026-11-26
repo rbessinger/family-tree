@@ -98,3 +98,9 @@ h1,h2,h3{line-height:1.2;margin:.2em 0 .4em}h1{font-size:1.9rem}h2{font-size:1.4
 @media(min-width:900px){#mm{width:200px}}
 
 .looked b{font-size:inherit}.looked{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:.85rem;color:#6b6254;line-height:1.4}
+
+.flag{margin:12px 0;padding:10px 12px;border-left:4px solid #A87A1F;background:#fbf4e4;border-radius:6px;font-size:.95rem}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;margin:6px 0 14px}
+.facts dt{font-weight:700;color:#5a5044}.facts dd{margin:0}
+.facts .src{display:block;font-size:.82rem;color:#7a6f62}
+#mbox.lb h3,#mbox.lb h2{overflow-wrap:anywhere;word-break:break-word;padding-right:4px;margin-left:0}
