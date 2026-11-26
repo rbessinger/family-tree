@@ -5,6 +5,7 @@
 const SITE = 'https://rbessinger.github.io/family-tree';
 const MODEL = 'claude-haiku-5-5';
 const MAX_ROUNDS = 6;
+const VERSION = '2026-11-25-c';
 const hits = new Map();
 let DB = null, DBAt = 0, memSpend = { m: '', n: 0 };
 const cors = o => ({ 'Access-Control-Allow-Origin': o, 'Access-Control-Allow-Headers': 'content-type', 'Access-Control-Allow-Methods': 'POST,OPTIONS', 'Vary': 'Origin' });
@@ -182,6 +183,6 @@ export default {
       answer = 'Sorry, the helper is resting right now. Please ask Ross.';
     }
     if (used) await addSpend(env, used);
-    return Response.json({ answer, looked: looked.slice(0, 8) }, { headers: h });
+    return Response.json({ answer, looked: looked.slice(0, 8), v: VERSION + (NOTES.length ? '+notes' + NOTES.length : '') }, { headers: h });
   }
 };
