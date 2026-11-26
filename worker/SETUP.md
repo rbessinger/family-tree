@@ -27,3 +27,13 @@ Bot address:  https://ask.bessinger.fyi     (Cloudflare Worker "family-ask")
 
 Safety built in: only the family site can call the bot, 25 questions per visitor per hour,
 a monthly token cap (variable MONTHLY_TOKEN_CAP, default 3000000), and living relatives' private details are blocked in code.
+
+## Deploying a new Worker version (what actually works)
+
+1. Build the bundle on the Mac from a commit-pinned GitHub URL, because raw.githubusercontent.com caches the branch path for 5 minutes and ignores cache-busting query strings:
+   `curl -s https://raw.githubusercontent.com/rbessinger/family-tree/<COMMIT>/worker/worker.js -o /tmp/worker.js` and the same for `build_private.py`, then
+   `python3 /tmp/build_private.py "<path to ask-notes.json>" /tmp/ask-new.js && pbcopy < /tmp/ask-new.js`.
+2. In Cloudflare, family-ask, Edit code, Cmd+A, Cmd+V, check line 8 (`VERSION`), Deploy.
+3. Confirm: POST a question and read the `v` field in the response. It must equal the VERSION plus `+notes69`.
+
+Before every push to the site run `python3 scripts/check_privacy.py`.
