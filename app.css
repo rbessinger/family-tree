@@ -89,3 +89,5 @@ h1,h2,h3{line-height:1.2;margin:.2em 0 .4em}h1{font-size:1.9rem}h2{font-size:1.4
 }
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 #mbox.lb .btn{background:#222;color:#fff;border-color:#fff}#mbox.lb h3{margin-top:.8em}
+
+.rel.big{font-size:1.15rem;line-height:1.4;padding:14px 16px;margin:16px 0}.path{display:flex;flex-direction:column;gap:2px}.path .arrow{text-align:center;color:#8d8272;font-size:1.2rem;line-height:1}

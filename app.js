@@ -15,7 +15,7 @@ function place(id){return P[id].bp||''}
 const anc=id=>{const m={[id]:0};let fr=[id];for(let d=1;fr.length&&d<12;d++){const nx=[];for(const x of fr)for(const p of P[x].par)if(!(p in m)){m[p]=d;nx.push(p)}fr=nx}return m};
 const ord=n=>['','first','second','third','fourth','fifth','sixth','seventh','eighth'][n]||n+'th';
 const gr=n=>n<=0?'':n<=2?'great-'.repeat(n):ord(n)+' great-';
-function blood(a,b){const A=anc(a),B=anc(b);let best=null;for(const x in A)if(x in B){const t=A[x]+B[x];if(!best||t<best.t)best={t,da:A[x],db:B[x]}}return best}
+function blood(a,b){const A=anc(a),B=anc(b);let best=null;for(const x in A)if(x in B){const t=A[x]+B[x];if(!best||t<best.t)best={t,da:A[x],db:B[x],x}}return best}
 function lab(da,db,s){const m=s==='M',f=s==='F',g=(x,y)=>m?x:f?y:x+'/'+y;
  if(!da&&!db)return'you';
  if(!db){return da===1?g('father','mother'):da===2?g('grandfather','grandmother'):gr(da-2)+g('grandfather','grandmother')}
@@ -24,13 +24,19 @@ function lab(da,db,s){const m=s==='M',f=s==='F',g=(x,y)=>m?x:f?y:x+'/'+y;
  if(da===1)return db===2?g('nephew','niece'):(db===3?'grand':gr(db-3)+'grand')+g('nephew','niece');
  if(db===1)return da===2?g('uncle','aunt'):gr(da-2)+g('uncle','aunt');
  const k=Math.min(da,db)-1,r=Math.abs(da-db);return ord(k)+' cousin'+(r?(r===1?' once removed':r===2?' twice removed':' '+r+' times removed'):'')}
-function relOf(a,b){const k=a+'>'+b;if(k in REL)return REL[k];let out='';
- if(a===b)out='you';else{const bl=blood(a,b);
-  if(bl)out='your '+lab(bl.da,bl.db,P[b].s);
-  else if(P[a].sp.includes(b))out='your '+(P[b].s==='M'?'husband':'wife');
-  else{for(const s of P[b].sp){const x=blood(a,s);if(x){out='your '+lab(x.da,x.db,P[s].s)+"'s "+(P[b].s==='M'?'husband':'wife');break}}
-   if(!out)for(const s of P[a].sp){const x=blood(s,b);if(x){out="your "+(P[s].s==='M'?'husband':'wife')+"'s "+lab(x.da,x.db,P[b].s);break}}}}
- return REL[k]=out}
+function relRaw(a,b){let out='';
+ if(a===b)return'you';const bl=blood(a,b);
+ if(bl)out=lab(bl.da,bl.db,P[b].s);
+ else if(P[a].sp.includes(b))out=P[b].s==='M'?'husband':'wife';
+ else{for(const s of P[b].sp){const x=blood(a,s);if(x){out=lab(x.da,x.db,P[s].s)+"'s "+(P[b].s==='M'?'husband':'wife');break}}
+  if(!out)for(const s of P[a].sp){const x=blood(s,b);if(x){out=(P[s].s==='M'?'husband':'wife')+"'s "+lab(x.da,x.db,P[b].s);break}}}
+ return out}
+function relOf(a,b){const k=a+'>'+b;if(k in REL)return REL[k];const r=relRaw(a,b);return REL[k]=!r?'':r==='you'?'you':'your '+r}
+function chain(a,x){const prev={[a]:null};let fr=[a];while(fr.length&&!(x in prev)){const nx=[];for(const i of fr)for(const p of P[i].par)if(!(p in prev)){prev[p]=i;nx.push(p)}fr=nx}const out=[];let c=x;while(c!=null&&c in prev){out.push(c);c=prev[c]}return out.reverse()}
+function pathOf(a,b){if(P[a].sp.includes(b))return{ids:[a,b],top:null};const bl=blood(a,b);if(bl){const up=chain(a,bl.x),dn=chain(b,bl.x).reverse().slice(1);return{ids:[...up,...dn],top:bl.x,bl}}
+ for(const s of [...P[b].sp]){const x=blood(a,s);if(x){const up=chain(a,x.x),dn=chain(s,x.x).reverse().slice(1);return{ids:[...up,...dn,b],top:x.x,bl:x}}}
+ for(const s of [...P[a].sp]){const x=blood(s,b);if(x){const up=chain(s,x.x),dn=chain(b,x.x).reverse().slice(1);return{ids:[a,...up,...dn],top:x.x,bl:x}}}
+ return null}
 const rel=id=>me&&P[me]&&id!==me?relOf(me,id):'';
 /* ---------- search & matching ---------- */
 function find(q){q=nz(q);if(!q)return[];const t=q.split(' ');return NAME.filter(x=>t.every(w=>x.n.split(' ').some(v=>v.startsWith(w))||x.n.includes(w))).sort((a,b)=>(b.n.startsWith(q)-a.n.startsWith(q))||a.n.localeCompare(b.n)).slice(0,8).map(x=>x.id)}
@@ -53,11 +59,11 @@ function lightbox(slug){const a=D.arts.find(x=>x.slug===slug);const lk=a.stories
  modal(`<button class="btn sm" data-x style="float:right;color:#fff;border-color:#fff">Close</button><img src="${slug}.jpg" alt="${esc(a.title)}"><h3>${esc(a.title)}</h3><p>${esc(a.cap)}</p><div class="row">${lk}</div>`,'lb')}
 function menu(){modal(`<button class="btn sm x" data-x>Close</button><h2>Menu</h2><h3>Text size</h3><div class="seg" id="fsg">${['Normal','Large','Extra large'].map((l,i)=>`<button data-fs="${i}" aria-pressed="${(document.documentElement.dataset.fs||'0')==i}">${l}</button>`).join('')}</div>
 <h3>Who are you?</h3><p class="lead">${me&&P[me]?'You are set as '+esc(P[me].n)+'.':'Pick your name and every page will say how you are related.'}</p><div class="row"><button class="btn" id="chg">${me?'Change my name':'Pick my name'}</button>${me?'<button class="btn" id="clr">Forget me</button>':''}</div>
-<h3>More</h3><div class="row"><button class="btn" id="hlp">Help us solve these</button><a class="btn" href="tree.html">Original poster view</a><a class="btn" href="Our-Family-Tree-poster-36x48.pdf">Poster PDF</a></div>`);
+<h3>More</h3><div class="row"><a class="btn" href="#/related//" id="mrel">How are two people related?</a><button class="btn" id="hlp">Help us solve these</button><a class="btn" href="tree.html">Original poster view</a><a class="btn" href="Our-Family-Tree-poster-36x48.pdf">Poster PDF</a></div>`);
  $('#fsg').onclick=e=>{const b=e.target.closest('[data-fs]');if(b){setFS(b.dataset.fs);$('#fsg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b))}};
  $('#chg').onclick=()=>{closeModal();location.hash='#/home';setTimeout(()=>$('#fi')&&$('#fi').focus(),200)};
  const c=$('#clr');if(c)c.onclick=()=>{me=null;LS.del('me');REL={};closeModal();chip();route()};
- $('#hlp').onclick=help}
+ $('#hlp').onclick=help;$('#mrel').onclick=()=>closeModal()}
 function help(){modal(`<button class="btn sm x" data-x>Close</button><h2>Help us solve these</h2><p class="lead">Missing pieces on the tree. Even a guess or a half-memory helps. Tell Ross.</p>${D.help}`)}
 $('#menuBtn').onclick=menu;
 const ASK=window.ASK_URL||'';let AH=[];
@@ -82,14 +88,30 @@ function home(v){const q=D.stories?Object.keys(D.stories).length:0;
  v.innerHTML=`<section class="hero"><h1>${me&&P[me]?'Welcome back, '+esc(first(me)):'Welcome to our family tree'}</h1><p class="lead">${P?Object.keys(P).length:0} people, four families, one big story. ${me&&P[me]?'':'Start by finding your name.'}</p></section>
 ${me&&P[me]?`<div class="row"><a class="btn pri" href="#/p/${me}">My page</a><a class="btn" href="#/tree/${me}">My family tree</a></div><h3 style="margin-top:22px">Look up someone else</h3>`:'<h3>Find your name</h3>'}
 <div class="find"><input id="fi" class="search" type="search" placeholder="Type your first or last name" autocomplete="off" aria-label="Find a person"><div id="fr"></div></div>
-<div class="tiles"><a class="tile" style="--c:#2D5B63" href="#/tree"><b>Explore the tree</b><span>Drag, pinch and tap</span></a><a class="tile" style="--c:#9C4A2B" href="#/people"><b>Everyone</b><span>${Object.keys(P).length} people A to Z</span></a><a class="tile" style="--c:#A87A1F" href="#/stories"><b>Stories</b><span>${q} life stories</span></a><a class="tile" style="--c:#6A4A7E" href="#/scans"><b>Scans</b><span>${D.arts.length} photos and clippings</span></a></div>
+<div class="tiles"><a class="tile" style="--c:#3D6B4F" href="#/related/${me&&P[me]?me:''}/"><b>How are we related?</b><span>Pick any two people</span></a><a class="tile" style="--c:#2D5B63" href="#/tree"><b>Explore the tree</b><span>Drag, pinch and tap</span></a><a class="tile" style="--c:#9C4A2B" href="#/people"><b>Everyone</b><span>${Object.keys(P).length} people A to Z</span></a><a class="tile" style="--c:#A87A1F" href="#/stories"><b>Stories</b><span>${q} life stories</span></a><a class="tile" style="--c:#6A4A7E" href="#/scans"><b>Scans</b><span>${D.arts.length} photos and clippings</span></a></div>
 <button class="btn" id="hh" style="width:100%">Help us solve these missing pieces</button>`;
  findBox('fi','fr',id=>{if(!me||confirm_me(id))location.hash='#/p/'+id});$('#hh').onclick=help}
 const confirm_me=()=>true;
+function related(v,a,b){a=P[a]?a:(me&&P[me]?me:'');b=P[b]?b:'';
+ v.innerHTML=`<h1>How are they related?</h1><p class="lead">Pick two people and see the connection.</p>
+ <h3>First person</h3><div id="ra"></div><div class="find"><input id="rfa" class="search" type="search" placeholder="Type a name" autocomplete="off"><div id="rra"></div></div>
+ <h3>Second person</h3><div id="rb"></div><div class="find"><input id="rfb" class="search" type="search" placeholder="Type a name" autocomplete="off"><div id="rrb"></div></div><div id="rout"></div>`;
+ const chipH=id=>id?`<div class="row"><a class="pbtn" style="--c:${col(id)}" href="#/p/${id}"><span><b>${esc(P[id].n)}</b><span class="yrs">${yrs(id)}</span></span></a></div>`:'';
+ $('#ra').innerHTML=chipH(a);$('#rb').innerHTML=chipH(b);
+ const go=(x,y)=>{location.hash='#/related/'+(x||'')+'/'+(y||'')};
+ findBox('rfa','rra',id=>go(id,b));findBox('rfb','rrb',id=>go(a,id));
+ if(a&&b){const nm=id=>id===me?'You':P[id].n,r=relRaw(a,b),pa=pathOf(a,b);let h='';
+  if(a===b)h='<div class="rel big">That is the same person.</div>';
+  else if(!r)h=`<div class="rel big">No family connection found in this tree between ${esc(P[a].n)} and ${esc(P[b].n)}.</div>`;
+  else{const A=a===me?'your':first(a)+"'s";h=`<div class="rel big"><b>${esc(P[b].n)}</b> is ${esc(A)} <b>${esc(r)}</b>.</div>`}
+  if(pa&&pa.ids.length>1){const t=pa.top;h+=`<h3>The path</h3><div class="path">${pa.ids.map((id,i)=>`<a class="pbtn" style="--c:${col(id)}" href="#/p/${id}"><span><span class="lab">${i===0?'Start':i===pa.ids.length-1?'End':id===t?'Shared ancestor':''}</span><b>${esc(P[id].n)}</b><span class="yrs">${yrs(id)}</span></span></a>`).join('<div class="arrow">&darr;</div>')}</div>`}
+  $('#rout').innerHTML=h}
+ else $('#rout').innerHTML=a||b?'<p class="lead" style="margin-top:14px">Now pick the other person.</p>':''}
 function personPage(v,id){const p=P[id];if(!p){v.innerHTML='<p>Person not found.</p>';return}const m=matchFor(id),r=rel(id),sib=[...new Set(p.par.flatMap(x=>P[x].ch))].filter(x=>x!==id);
  const sec=(t,items)=>items.length?`<h2>${t}</h2>${items.join('')}`:'';
  v.innerHTML=`<div class="pname" style="--c:${col(id)}"><span class="kick">${esc(p.b==='root'?'Our family':p.b==='W'?'Siegel family':p.b+' branch')}</span><h1>${esc(p.n)}</h1><div class="yrs">${yrs(id)}${place(id)?' · born in '+esc(place(id)):''}</div>${r?`<div class="rel">${esc(r[0].toUpperCase()+r.slice(1))}</div>`:''}</div>
-<div class="row"><a class="btn pri" href="#/tree/${id}">See on the tree</a>${me===id?'<span class="btn" style="border-style:dashed">This is you</span>':`<button class="btn" id="im">This is me</button>`}</div>
+<div class="row"><a class="btn pri" href="#/tree/${id}">See on the tree</a>${me===id?'<span class="btn" style="border-style:dashed">This is you</span>':`<button class="btn" id="im">This is me</button>`}<a class="btn" href="#/related/${id}/">How are they related to...</a></div>
+${!me?'<p class="lead" style="margin:10px 0 0">Tap <b>This is me</b> and every page will say how this person is related to you.</p>':''}
 ${p.q?`<div class="q"><b>Help us solve this</b><br>${esc(p.q)} If you know, tell Ross.</div>`:''}
 ${sec('Parents',p.par.map(x=>pbtn(x,P[x].s==='M'?'Father':P[x].s==='F'?'Mother':'Parent')))}
 ${sec(p.sp.length>1?'Spouses':'Spouse',p.sp.map(x=>pbtn(x,P[x].s==='M'?'Husband':'Wife')))}
@@ -119,7 +141,7 @@ function scans(v){let k='';v.innerHTML=`<h1>Scans and photos</h1><p class="lead"
 let selId=null;
 function openSheet(id){selId=id;const p=P[id],m=matchFor(id),r=rel(id);const s=$('#sheet');
  s.innerHTML=`<div class="grab"></div><button class="btn sm x" id="sx">Close</button><span class="kick" style="--c:${col(id)}">${esc(p.b==='root'?'Our family':p.b==='W'?'Siegel family':p.b)}</span><h2>${esc(p.n)}</h2><div class="yrs">${yrs(id)}${place(id)?' · born in '+esc(place(id)):''}</div>${r?`<div class="rel" style="--c:${col(id)}">${esc(r[0].toUpperCase()+r.slice(1))}</div>`:''}
- <div class="row"><a class="btn pri" href="#/p/${id}">Open full page</a>${id!==focusId?'<button class="btn" id="ctr">Show their family</button>':''}</div>
+ ${!r&&!me?'<div class="rel" style="--c:#6b6254;font-weight:600">Tap Open full page, then This is me, to see how they are related to you.</div>':''}<div class="row"><a class="btn pri" href="#/p/${id}">Open full page</a><a class="btn" href="#/related/${id}/">Compare with...</a>${id!==focusId?'<button class="btn" id="ctr">Show their family</button>':''}</div>
  ${m.st.length?`<h3>Stories</h3>${m.st.slice(0,4).map(storyCard).join('')}`:''}${m.ar.length?`<h3>Scans</h3><div class="grid">${m.ar.slice(0,4).map(thumb).join('')}</div>`:''}${p.q?`<div class="q">${esc(p.q)}</div>`:''}`;
  s.classList.add('open');$('#sx').onclick=closeSheet;const c=$('#ctr');if(c)c.onclick=()=>{closeSheet();location.hash='#/tree/'+id};bindThumbs(s);document.querySelectorAll('.tc.sel').forEach(x=>x.classList.remove('sel'));const el=document.querySelector(`.tc[data-id="${id}"]`);el&&el.classList.add('sel')}
 function closeSheet(){$('#sheet').classList.remove('open');selId=null;document.querySelectorAll('.tc.sel').forEach(x=>x.classList.remove('sel'))}
@@ -177,11 +199,11 @@ function tree(v,id){id=id||me||T.me;if(!P[id])id=T.me;focusId=id;v.classList.add
  v._onresize=()=>{apply()}}
 function findModal(){modal(`<button class="btn sm x" data-x>Close</button><h2>Jump to a person</h2><div class="find"><input id="fi2" class="search" type="search" placeholder="Type a name" autocomplete="off"><div id="fr2"></div></div>`);findBox('fi2','fr2',id=>{closeModal();location.hash='#/tree/'+id});setTimeout(()=>$('#fi2').focus(),50)}
 /* ---------- router ---------- */
-function route(){const v=$('#view');v.classList.remove('tree');v._onresize=null;if(!T)return;let h=decodeURIComponent(location.hash.replace(/^#\/?/,''));if(!h)h='home';const[a,b]=h.split('/');
+function route(){const v=$('#view');v.classList.remove('tree');v._onresize=null;if(!T)return;let h=decodeURIComponent(location.hash.replace(/^#\/?/,''));if(!h)h='home';const[a,b,c2]=h.split('/');
  if(!['tree'].includes(a))closeSheet();
- if(!/^(home|tree|people|p|stories|s|scans)$/.test(a)){const id=byName(h);if(id){location.hash='#/p/'+id;return}location.hash='#/home';return}
+ if(!/^(home|tree|people|p|stories|s|scans|related)$/.test(a)){const id=byName(h);if(id){location.hash='#/p/'+id;return}location.hash='#/home';return}
  document.querySelectorAll('#tabs a').forEach(x=>x.classList.toggle('on',x.dataset.t===({p:'people',s:'stories'}[a]||a)));
- ({home:()=>home(v),tree:()=>{if(!b)mode='all';else if(mode==='all')mode='both';tree(v,b)},people:()=>people(v),p:()=>personPage(v,b),stories:()=>stories(v),s:()=>story(v,b),scans:()=>scans(v)})[a]();
+ ({home:()=>home(v),tree:()=>{if(!b)mode='all';else if(mode==='all')mode='both';tree(v,b)},people:()=>people(v),p:()=>personPage(v,b),stories:()=>stories(v),s:()=>story(v,b),scans:()=>scans(v),related:()=>related(v,b,c2)})[a]();
  if(a!=='tree')scrollTo(0,0);v.focus({preventScroll:true})}
 addEventListener('hashchange',route);addEventListener('resize',()=>{const v=$('#view');v._onresize&&v._onresize()});
 Promise.all([fetch('tree-data.json').then(r=>r.json()),fetch('data.json').then(r=>r.json())]).then(([t,d])=>{T=t;D=d;P=t.p;COL=t.cols;NAME=Object.entries(P).map(([id,p])=>({id,n:nz(p.n)}));
